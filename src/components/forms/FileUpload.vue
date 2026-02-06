@@ -5,12 +5,12 @@
         <label
           :class="[
             'block font-medium',
-            isAnswered ? 'text-answered' : 'text-gray-800'
+            isAnswered ? 'text-answered' : 'text-text-primary'
           ]"
         >
           {{ label }}
         </label>
-        <p class="text-sm text-gray-600 mt-1">{{ description }}</p>
+        <p class="text-sm text-text-secondary mt-1">{{ description }}</p>
       </div>
       <div class="flex items-center gap-4">
         <label class="flex items-center gap-2 cursor-pointer">
@@ -18,28 +18,28 @@
             type="checkbox"
             :checked="dontHaveFile"
             @change="handleDontHaveFileChange"
-            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            class="w-4 h-4 text-accent border-border rounded focus:ring-accent"
           />
-          <span class="text-sm text-gray-700">I don't have this file</span>
+          <span class="text-sm text-text-secondary">I don't have this file</span>
         </label>
         <button
           v-if="!dontHaveFile && !uploadedFile"
           @click="triggerFileInput"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          class="accent-bg text-inverse px-4 py-2 bg-accent text-text-inverse rounded-lg hover:bg-accent-hover transition-colors"
         >
           Upload File
         </button>
         <button
           v-else-if="uploadedFile && !dontHaveFile"
           @click="triggerFileInput"
-          class="px-4 py-2 text-blue-600 hover:text-blue-700 transition-colors"
+          class="px-4 py-2 text-accent hover:text-accent-hover transition-colors"
         >
           Upload Another File
         </button>
         <button
           v-else
           disabled
-          class="px-4 py-2 bg-gray-200 text-gray-400 rounded-lg cursor-not-allowed"
+          class="px-4 py-2 bg-muted text-text-muted rounded-lg cursor-not-allowed"
         >
           Upload File
         </button>
@@ -54,26 +54,26 @@
     />
 
     <!-- File Card (State 3) -->
-    <div v-if="uploadedFile && !dontHaveFile" class="mt-4 bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+    <div v-if="uploadedFile && !dontHaveFile" class="mt-4 bg-surface border border-border rounded-lg p-4 flex items-center justify-between">
       <div class="flex items-center gap-3 flex-1">
-        <div class="w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
-          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="w-10 h-10 bg-accent-muted rounded flex items-center justify-center">
+          <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
         <div class="flex-1">
-          <p class="text-sm font-medium text-gray-800">{{ uploadedFile.name }}</p>
-          <p class="text-xs text-gray-500">{{ formatFileSize(uploadedFile.size) }}</p>
+          <p class="text-sm font-medium text-text-primary">{{ uploadedFile.name }}</p>
+          <p class="text-xs text-text-muted">{{ formatFileSize(uploadedFile.size) }}</p>
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <button class="text-blue-600 text-sm hover:text-blue-700">Add comment</button>
-        <button @click="downloadFile" class="p-2 text-gray-600 hover:text-gray-800">
+        <button class="text-accent text-sm hover:text-accent-hover">Add comment</button>
+        <button @click="downloadFile" class="p-2 text-text-secondary hover:text-text-primary">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
         </button>
-        <button @click="removeFile" class="p-2 text-gray-600 hover:text-red-600">
+        <button @click="removeFile" class="p-2 text-text-secondary hover:text-red-600">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
@@ -87,8 +87,8 @@
         :value="explanation"
         @input="$emit('update:explanation', $event.target.value)"
         placeholder="Please detail why and what compliance documentation you can supply"
-        rows="4"
-        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+        rows="1"
+        class="form-input w-full px-4 py-2 resize-y min-h-[2.5rem] focus:outline-none"
       ></textarea>
     </div>
   </div>
@@ -188,8 +188,3 @@ const formatFileSize = (bytes) => {
 }
 </script>
 
-<style scoped>
-.text-answered {
-  color: #656565;
-}
-</style>

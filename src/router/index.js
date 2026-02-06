@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isValidStepPage } from '../data/onboardingConfig'
 
 const router = createRouter({
   history: createWebHistory('/Test1A-Desktop/'),
@@ -9,19 +10,18 @@ const router = createRouter({
       component: () => import('../views/Overview.vue')
     },
     {
-      path: '/step1/page1',
-      name: 'Step1Page1',
-      component: () => import('../views/Step1/Page1.vue')
-    },
-    {
-      path: '/step1/page2',
-      name: 'Step1Page2',
-      component: () => import('../views/Step1/Page2.vue')
-    },
-    {
-      path: '/step1/page3',
-      name: 'Step1Page3',
-      component: () => import('../views/Step1/Page3.vue')
+      path: '/step/:stepId/page/:pageId',
+      name: 'StepPage',
+      component: () => import('../views/StepPage.vue'),
+      beforeEnter: (to, _from, next) => {
+        const stepId = to.params.stepId
+        const pageId = to.params.pageId
+        if (isValidStepPage(stepId, pageId)) {
+          next()
+        } else {
+          next({ name: 'Overview' })
+        }
+      }
     }
   ]
 })

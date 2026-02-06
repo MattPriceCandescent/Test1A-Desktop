@@ -1,32 +1,44 @@
 <template>
-  <div class="relative">
-    <label
-      :class="[
-        'block font-medium mb-2',
-        isAnswered ? 'text-answered' : 'text-gray-800'
-      ]"
-    >
-      {{ label }}
-    </label>
-    <select
-      :value="modelValue"
-      @change="$emit('update:modelValue', $event.target.value)"
-      class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none pr-10"
-    >
-      <option value="" disabled>{{ placeholder }}</option>
-      <option
-        v-for="option in options"
-        :key="option"
-        :value="option"
+  <div>
+    <div class="flex items-start gap-3">
+      <label
+        :class="[
+          'font-medium flex-1 mr-3 min-w-0',
+          isAnswered ? 'text-answered' : 'text-text-primary'
+        ]"
       >
-        {{ option }}
-      </option>
-    </select>
+        {{ label }}
+      </label>
+      <select
+        :value="selectValue"
+        @change="onSelectChange($event)"
+        class="form-input flex-shrink-0 w-full min-w-[12rem] max-w-[256px] px-4 py-2 appearance-none pr-10 focus:outline-none"
+      >
+        <option value="" disabled>{{ placeholder }}</option>
+        <option
+          v-for="option in options"
+          :key="option"
+          :value="option"
+        >
+          {{ option }}
+        </option>
+      </select>
+    </div>
+    <input
+      v-if="showOtherInput"
+      type="text"
+      :value="otherValue"
+      @input="onOtherInput($event.target.value)"
+      placeholder="Please specify"
+      class="form-input w-full mt-3 px-4 py-2 focus:outline-none"
+    />
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   label: {
     type: String,
     required: true
@@ -36,7 +48,7 @@ defineProps({
     required: true
   },
   modelValue: {
-    type: String,
+    type: [String, Object],
     default: ''
   },
   placeholder: {
@@ -49,14 +61,38 @@ defineProps({
   }
 })
 
-defineEmits(['update:modelValue'])
-</script>
+const emit = defineEmits(['update:modelValue'])
 
-<style scoped>
-.text-answered {
-  color: #656565;
+const hasOtherOption = computed(() => props.options.includes('Other'))
+
+const selectValue = computed(() => {
+  const v = props.modelValue
+  if (v == null) return ''
+  if (typeof v === 'object' && v !== null && 'value' in v) return v.value
+  return v
+})
+
+const otherValue = computed(() => {
+  const v = props.modelValue
+  if (typeof v === 'object' && v !== null && v.value === 'Other') return v.other || ''
+  return ''
+})
+
+const showOtherInput = computed(() => hasOtherOption.value && selectValue.value === 'Other')
+
+function onSelectChange(event) {
+  const value = event.target.value
+  if (value === 'Other') {
+    emit('update:modelValue', { value: 'Other', other: '' })
+  } else {
+    emit('update:modelValue', value)
+  }
 }
-</style>
+
+function onOtherInput(text) {
+  emit('update:modelValue', { value: 'Other', other: text })
+}
+</script>
 
 <style scoped>
 select {

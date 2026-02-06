@@ -2,6 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design system tokens: light theme */
+:root {
+  /* Background (theme/palette/background) */
+  --color-bg-page: #FAFAFA;           /* background/default - alternative fill */
+  --color-bg-surface: #FFFFFF;        /* background/paper - primary fill */
+  --color-bg-paper: #FFFFFF;         /* background/paper (alias) */
+  --color-bg-surface-hover: #F5F5F5;
+  --color-bg-muted: #FAFAFA;
+  /* Text (theme/palette/text) */
+  --color-text-primary: #212121;      /* text/primary */
+  --color-text-secondary: #656565;    /* text/secondary */
+  --color-text-muted: #9E9E9E;       /* text/disabled */
+  --color-text-answered: #656565;    /* text/secondary */
+  --color-text-inverse: #FFFFFF;     /* text/inverse */
+  /* Root (theme/palette) */
+  --color-border: #E0E0E0;           /* /divider */
+  --color-border-interactive: #919191; /* /interactiveBorder */
+  /* Primary (theme/palette - primary/main, primary/dark) */
+  --color-accent: #1A6CDA;            /* primary/main - default for interactive */
+  --color-accent-hover: #14427C;      /* primary/dark - hover state */
+  --color-accent-muted: #E3EFFD;      /* light tint for chips/cards */
+  --color-accent-muted-text: #14427C;
+  /* Special */
+  --color-input-bg: #FAFAFA;
+  --color-progress-bg: #D1D5DB;       /* track/inactive circles - visible on paper */
+  --color-progress-fill: #1A6CDA;
+}
+
+/* Design system tokens: dark theme (tuned for contrast and hierarchy) */
+.dark {
+  --color-bg-page: #1d1d1d;           /* background/default - deepest layer */
+  --color-bg-surface: #171717;        /* background/paper - elevated, visible vs page */
+  --color-bg-paper: #171717;         /* background/paper (alias) */
+  --color-bg-surface-hover: #2E2E2E;
+  --color-bg-muted: #2A2A2A;
+  --color-text-primary: #FFFFFF;      /* text/primary */
+  --color-text-secondary: #C4C4C4;    /* text/secondary - improved contrast on dark */
+  --color-text-muted: #8A8A8A;        /* text/disabled - readable section labels */
+  --color-text-answered: #B6B6B6;
+  --color-text-inverse: #212121;     /* text/inverse */
+  --color-border: #404040;            /* /divider - stronger so surfaces read clearly */
+  --color-border-interactive: #6B6B6B; /* /interactiveBorder - visible input borders */
+  --color-accent: #71AAF4;            /* primary/main */
+  --color-accent-hover: #96CBF8;      /* primary/dark - hover */
+  --color-accent-muted: #1A2D4A;
+  --color-accent-muted-text: #96CBF8;
+  --color-input-bg: #1E1E1E;         /* slightly lighter than page so input is defined */
+  --color-progress-bg: #404040;
+  --color-progress-fill: #71AAF4;
+
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -9,9 +61,147 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: var(--color-text-primary);
 }
 
 #app {
   min-height: 100vh;
-  background-color: #F3F4F6;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+}
+
+input,
+textarea,
+select {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-paper);
+}
+
+/* Native radio/checkbox use design system primary color */
+input[type="radio"],
+input[type="checkbox"] {
+  accent-color: var(--color-accent);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.text-answered {
+  color: var(--color-text-answered);
+}
+
+/* Explicit layout fills so page/paper/surface layers paint correctly and fixed chrome is opaque */
+.layout-page {
+  background-color: var(--color-bg-page);
+}
+
+.layout-paper {
+  background-color: var(--color-bg-paper);
+  isolation: isolate; /* solid layer so scrolling content does not show through */
+}
+
+.layout-surface {
+  background-color: var(--color-bg-surface);
+}
+
+/* Keep main content behind fixed header/nav/bottom bar so they don't show through */
+main.layout-page {
+  position: relative;
+  z-index: 0;
+}
+
+/* Explicit primary/accent color so it always shows on buttons, progress, nav */
+.accent-bg {
+  background-color: var(--color-accent);
+}
+
+.accent-text {
+  color: var(--color-accent);
+}
+
+.accent-border {
+  border-color: var(--color-accent);
+}
+
+/* Secondary outline button: blue text + blue border everywhere */
+.btn-secondary-outline {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.btn-secondary-outline svg {
+  color: inherit;
+}
+
+/* Disabled secondary outline (e.g. Previous on first page) */
+.btn-secondary-outline-disabled {
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+.btn-secondary-outline-disabled svg {
+  color: inherit;
+}
+
+.accent-fill {
+  background-color: var(--color-progress-fill);
+}
+
+.accent-muted-bg {
+  background-color: var(--color-accent-muted);
+}
+
+/* Primary buttons: always white text in light mode, dark text in dark mode */
+.text-inverse {
+  color: var(--color-text-inverse);
+}
+
+/* Progress component: visible track and step circles */
+.progress-track {
+  background-color: var(--color-progress-bg);
+}
+
+.progress-step-inactive {
+  background-color: var(--color-progress-bg);
+}
+
+/* Active step circle: number must contrast on primary fill */
+.progress-step-active,
+.progress-step-active span {
+  color: var(--color-text-inverse);
+}
+
+/* Progress circle ring: track (unfilled) = grey/200 */
+.progress-circle-track {
+  stroke: var(--color-progress-bg);
+}
+
+/* Progress circle ring: fill arc - active = primary/main */
+.progress-circle-fill-active {
+  stroke: var(--color-progress-fill);
+}
+
+/* Progress circle ring: fill arc - inactive = text/secondary */
+.progress-circle-fill-inactive {
+  stroke: var(--color-text-secondary);
+}
+
+/* Progress circle: inner disc behind number (paper so number is visible) */
+.progress-circle-inner {
+  color: var(--color-bg-paper);
+}
+
+/* Shared form control styling: border, background, focus (for inputs, textareas, selects) */
+.form-input {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background-color: var(--color-input-bg);
+}
+.form-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent);
+  border-color: var(--color-accent);
 }

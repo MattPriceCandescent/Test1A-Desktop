@@ -1,17 +1,16 @@
 <template>
-  <div class="fixed bottom-0 left-64 right-80 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between z-40">
-    <!-- Left side text (only on page 3) -->
-    <div v-if="currentPage === 3" class="text-sm text-gray-500">
+  <div class="layout-paper fixed bottom-0 left-64 right-80 bg-paper border-t border-border px-6 py-4 flex flex-col gap-3 z-40">
+    <!-- Message above buttons (on last page of each step) -->
+    <div v-if="isLastPageOfCurrentStep" class="text-sm text-text-muted text-right">
       You'll be able to come back and add to your application after you submit it.
     </div>
-    <div v-else></div>
 
-    <!-- Right side buttons -->
-    <div class="flex items-center gap-4">
+    <!-- Buttons row -->
+    <div class="flex items-center justify-end gap-4">
       <!-- Save & Exit -->
       <button
         @click="handleSaveAndExit"
-        class="px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+        class="btn-secondary-outline px-4 py-2 bg-surface border rounded-lg hover:bg-accent-muted transition-colors"
       >
         Save and exit
       </button>
@@ -21,10 +20,10 @@
         @click="handlePrevious"
         :disabled="!canGoPrevious"
         :class="[
-          'px-4 py-2 bg-white border rounded-lg transition-colors flex items-center gap-2',
+          'px-4 py-2 bg-surface border rounded-lg transition-colors flex items-center gap-2',
           canGoPrevious
-            ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
-            : 'border-gray-200 text-gray-400 cursor-not-allowed'
+            ? 'btn-secondary-outline hover:bg-accent-muted'
+            : 'btn-secondary-outline-disabled'
         ]"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,7 +35,7 @@
       <!-- Primary Button (Continue/Submit) -->
       <button
         @click="handlePrimary"
-        class="px-6 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors flex items-center gap-2"
+        class="accent-bg text-inverse px-6 py-2 bg-accent text-text-inverse rounded-lg hover:bg-accent-hover transition-colors flex items-center gap-2"
       >
         <span>{{ primaryButtonText }}</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,25 +50,30 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useOnboardingStore } from '../../stores/onboardingStore'
+import { getOrderedPages, isLastPageOfStep } from '../../data/onboardingConfig'
 
 const router = useRouter()
 const route = useRoute()
 const store = useOnboardingStore()
 
-const currentPage = computed(() => {
-  if (route.path.includes('/step1/page1')) return 1
-  if (route.path.includes('/step1/page2')) return 2
-  if (route.path.includes('/step1/page3')) return 3
-  return 0
+const stepId = computed(() => route.params.stepId || '')
+const pageId = computed(() => route.params.pageId || '')
+
+const orderedPages = getOrderedPages()
+const currentIndex = computed(() => {
+  return orderedPages.findIndex(p => p.stepId === stepId.value && p.pageId === pageId.value)
 })
 
 const canGoPrevious = computed(() => {
-  return currentPage.value > 1
+  return currentIndex.value > 0
+})
+
+const isLastPageOfCurrentStep = computed(() => {
+  return isLastPageOfStep(stepId.value, pageId.value)
 })
 
 const primaryButtonText = computed(() => {
-  if (currentPage.value === 3) return 'Submit'
-  return 'Continue'
+  return isLastPageOfCurrentStep.value ? 'Submit' : 'Continue'
 })
 
 const handleSaveAndExit = () => {
@@ -78,25 +82,18 @@ const handleSaveAndExit = () => {
 
 const handlePrevious = () => {
   if (!canGoPrevious.value) return
-  
-  if (currentPage.value === 2) {
-    router.push('/step1/page1')
-  } else if (currentPage.value === 3) {
-    router.push('/step1/page2')
-  }
+  const prev = orderedPages[currentIndex.value - 1]
+  router.push(`/step/${prev.stepId}/page/${prev.pageId}`)
 }
 
 const handlePrimary = () => {
-  if (currentPage.value === 1) {
-    store.markPageComplete('step1', 'page1')
-    router.push('/step1/page2')
-  } else if (currentPage.value === 2) {
-    store.markPageComplete('step1', 'page2')
-    router.push('/step1/page3')
-  } else if (currentPage.value === 3) {
-    store.markPageComplete('step1', 'page3')
-    store.markStepComplete('step1')
+  store.markPageComplete(stepId.value, pageId.value)
+  if (isLastPageOfCurrentStep.value) {
+    store.markStepComplete(stepId.value)
     router.push('/')
+  } else {
+    const next = orderedPages[currentIndex.value + 1]
+    router.push(`/step/${next.stepId}/page/${next.pageId}`)
   }
 }
 </script>

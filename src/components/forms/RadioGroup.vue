@@ -3,7 +3,7 @@
     <label
       :class="[
         'font-medium flex-1 mr-3',
-        isAnswered ? 'text-answered' : 'text-gray-800'
+        isAnswered ? 'text-answered' : 'text-text-primary'
       ]"
     >
       {{ label }}
@@ -14,7 +14,7 @@
         :key="option"
         :class="[
           'flex items-center gap-2 cursor-pointer',
-          modelValue === option ? 'text-blue-600' : isAnswered ? 'text-answered' : 'text-gray-600'
+          modelValue === option ? 'text-accent' : isAnswered ? 'text-answered' : 'text-text-secondary'
         ]"
       >
         <input
@@ -23,7 +23,7 @@
           :value="option"
           :checked="modelValue === option"
           @change="$emit('update:modelValue', option)"
-          class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+          class="w-4 h-4 text-accent border-border focus:ring-accent"
         />
         <span>{{ option }}</span>
       </label>
@@ -58,8 +58,3 @@ defineProps({
 defineEmits(['update:modelValue'])
 </script>
 
-<style scoped>
-.text-answered {
-  color: #656565;
-}
-</style>

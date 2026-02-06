@@ -1,20 +1,26 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { formData } from '../data/formData'
+import { onboardingSteps } from '../data/onboardingConfig'
+
+function buildInitialPageCompletion() {
+  const initial = {}
+  for (const step of onboardingSteps) {
+    initial[step.id] = {}
+    for (const pageId of step.pageIds) {
+      initial[step.id][pageId] = false
+    }
+  }
+  return initial
+}
 
 export const useOnboardingStore = defineStore('onboarding', () => {
-  // Form answers - structure: { step1: { page1: { blockId: { questionId: answer } } } }
+  // Form answers - structure: { stepId: { pageId: { blockId: { questionId: answer } } } }
   const answers = ref({})
-  
-  // Page completion status
-  const pageCompletion = ref({
-    step1: {
-      page1: false,
-      page2: false,
-      page3: false
-    }
-  })
-  
+
+  // Page completion status - one entry per (stepId, pageId) from config
+  const pageCompletion = ref(buildInitialPageCompletion())
+
   // Step completion status
   const stepCompletion = ref({
     step1: false,
@@ -28,6 +34,33 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     step2: null,
     step3: null
   })
+
+  // Dynamic form block IDs (e.g. step2.page5 = list of 4th party vendor block ids)
+  const dynamicBlockIds = ref({})
+
+  function getDynamicBlockIds(step, page) {
+    return dynamicBlockIds.value[step]?.[page] ?? []
+  }
+
+  function addDynamicBlock(step, page) {
+    if (!dynamicBlockIds.value[step]) dynamicBlockIds.value[step] = {}
+    if (!dynamicBlockIds.value[step][page]) dynamicBlockIds.value[step][page] = []
+    const id = `4th-party-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    dynamicBlockIds.value[step][page] = [...dynamicBlockIds.value[step][page], id]
+    return id
+  }
+
+  function removeDynamicBlock(step, page, blockId) {
+    const list = dynamicBlockIds.value[step]?.[page]
+    if (!list) return
+    dynamicBlockIds.value[step][page] = list.filter(id => id !== blockId)
+    // Clear answers for this block
+    if (answers.value[step]?.[page]?.[blockId]) {
+      const next = { ...answers.value[step][page] }
+      delete next[blockId]
+      answers.value[step][page] = next
+    }
+  }
 
   // Initialize answers structure
   function initializeAnswers(step, page, blockId, questionId) {
@@ -50,13 +83,51 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     return answers.value[step]?.[page]?.[blockId]?.[questionId] ?? null
   }
 
-  // Calculate progress for a form block
+  // Check if an answer value counts as "answered" (matches page completion logic for file uploads, etc.)
+  function isAnswerFilled(answer) {
+    if (answer === null || answer === undefined || answer === '') return false
+    // agreementSignature: simulated signature (boolean or { signed: true })
+    if (answer === true || (typeof answer === 'object' && answer !== null && answer.signed === true)) return true
+    if (Array.isArray(answer)) {
+      if (answer.length === 0) return false
+      // mediaGallery: at least one item with file or youtube url
+      const hasMedia = answer.some(item => item && (item.file || (item.type === 'youtube' && item.url)))
+      if (hasMedia) return true
+      // linkList: at least one link with title or url
+      const hasLink = answer.some(link => link && (String(link.title || '').trim() || String(link.url || '').trim()))
+      if (hasLink) return true
+      // tagPicker: any selected
+      return answer.length > 0
+    }
+    if (typeof answer === 'object' && answer !== null) {
+      if (answer.file || answer.explanation) return true
+      if (answer.value !== undefined) {
+        if (answer.value === 'Other') return Boolean(answer.other && String(answer.other).trim())
+        return true
+      }
+      return Object.keys(answer).length > 0
+    }
+    return true
+  }
+
+  // Get block progress as { answered, total } based on the block's questions (from formData).
+  // Use this so progress stays correct when questions are added/removed.
+  function getBlockProgressCounts(step, page, blockId, questions) {
+    const total = Array.isArray(questions) ? questions.length : 0
+    if (total === 0) return { answered: 0, total: 0 }
+    let answered = 0
+    for (const q of questions) {
+      const answer = getAnswer(step, page, blockId, q.id)
+      if (isAnswerFilled(answer)) answered += 1
+    }
+    return { answered, total }
+  }
+
+  // Calculate progress for a form block (percentage, for backward compatibility)
   function calculateBlockProgress(step, page, blockId, totalQuestions) {
     if (!answers.value[step]?.[page]?.[blockId]) return 0
     const blockAnswers = answers.value[step][page][blockId]
-    const answeredCount = Object.values(blockAnswers).filter(
-      answer => answer !== null && answer !== undefined && answer !== ''
-    ).length
+    const answeredCount = Object.values(blockAnswers).filter(a => isAnswerFilled(a)).length
     return totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0
   }
 
@@ -67,33 +138,31 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     return totalBlocks > 0 ? Math.round((blocksWithAnswers / totalBlocks) * 100) : 0
   }
 
-  // Calculate page completion percentage based on all questions answered
+  // Calculate page completion percentage based on all questions answered.
+  // For pages with dynamicFormBlocks, uses dynamic block ids + template questions.
   function calculatePageCompletionPercentage(step, page) {
-    const pageData = formData.step1[page]
+    const pageData = formData[step]?.[page]
     if (!pageData) return 0
-    
+
     let totalQuestions = 0
     let answeredQuestions = 0
-    
-    pageData.formBlocks.forEach(block => {
+
+    const blocks = pageData.dynamicFormBlocks
+      ? getDynamicBlockIds(step, page).map(id => ({
+          id,
+          questions: pageData.vendorBlockTemplate?.questions ?? []
+        }))
+      : (pageData.formBlocks ?? [])
+
+    blocks.forEach(block => {
       const blockAnswers = answers.value[step]?.[page]?.[block.id] || {}
-      const blockTotal = block.questions.length
+      const blockTotal = Array.isArray(block.questions) ? block.questions.length : 0
       totalQuestions += blockTotal
-      
-      const answered = Object.values(blockAnswers).filter(
-        answer => {
-          if (answer === null || answer === undefined || answer === '') return false
-          if (typeof answer === 'object' && answer !== null) {
-            // Handle file upload objects
-            if (answer.file || answer.explanation) return true
-            return Object.keys(answer).length > 0
-          }
-          return true
-        }
-      ).length
+
+      const answered = Object.values(blockAnswers).filter(isAnswerFilled).length
       answeredQuestions += answered
     })
-    
+
     return totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0
   }
 
@@ -142,17 +211,27 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     return pageCompletion.value[step]?.[page] || false
   }
 
-  // Reset Step 1
+  // Reset a step (clears answers and page completion for that step)
+  function resetStep(stepId) {
+    if (answers.value[stepId]) {
+      answers.value[stepId] = {}
+    }
+    if (dynamicBlockIds.value[stepId]) {
+      dynamicBlockIds.value[stepId] = {}
+    }
+    const stepConfig = onboardingSteps.find(s => s.id === stepId)
+    if (stepConfig) {
+      pageCompletion.value[stepId] = {}
+      for (const pageId of stepConfig.pageIds) {
+        pageCompletion.value[stepId][pageId] = false
+      }
+    }
+    stepCompletion.value[stepId] = false
+    stepSubmissions.value[stepId] = null
+  }
+
   function resetStep1() {
-    if (answers.value.step1) {
-      answers.value.step1 = {}
-    }
-    pageCompletion.value.step1 = {
-      page1: false,
-      page2: false,
-      page3: false
-    }
-    stepCompletion.value.step1 = false
+    resetStep('step1')
   }
 
   return {
@@ -160,8 +239,14 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     pageCompletion,
     stepCompletion,
     stepSubmissions,
+    dynamicBlockIds,
+    getDynamicBlockIds,
+    addDynamicBlock,
+    removeDynamicBlock,
     updateAnswer,
     getAnswer,
+    isAnswerFilled,
+    getBlockProgressCounts,
     calculateBlockProgress,
     calculatePageProgress,
     calculatePageCompletionPercentage,
@@ -173,6 +258,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     isStepSubmitted,
     isStepComplete,
     isPageComplete,
+    resetStep,
     resetStep1
   }
 })

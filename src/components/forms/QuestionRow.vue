@@ -41,7 +41,7 @@ defineProps({
 }
 
 .question-content.answered {
-  background-color: #F9FAFB;
+  background-color: var(--color-bg-muted);
 }
 
 .question-content.unanswered {
@@ -50,7 +50,7 @@ defineProps({
 
 .question-separator {
   height: 1px;
-  background-color: #E5E7EB;
+  background-color: var(--color-border);
   margin: 24px 12px 0 12px;
 }
 </style>

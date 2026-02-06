@@ -1,12 +1,20 @@
 <template>
-  <div>
-    <label class="block text-gray-800 font-medium mb-2">{{ label }}</label>
+  <div class="flex items-start gap-3">
+    <label
+      :class="[
+        'font-medium flex-1 mr-3 min-w-0',
+        isAnswered ? 'text-answered' : 'text-text-primary'
+      ]"
+    >
+      {{ label }}
+    </label>
     <input
       type="text"
+      :name="name"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
       :placeholder="placeholder"
-      class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      class="form-input flex-shrink-0 w-full min-w-[12rem] max-w-[256px] px-4 py-2 focus:outline-none"
     />
   </div>
 </template>
@@ -24,6 +32,14 @@ defineProps({
   placeholder: {
     type: String,
     default: ''
+  },
+  name: {
+    type: String,
+    default: ''
+  },
+  isAnswered: {
+    type: Boolean,
+    default: false
   }
 })
 

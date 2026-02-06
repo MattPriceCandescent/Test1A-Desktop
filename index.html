@@ -5,6 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marketplace Onboarding</title>
+    <script>
+      (function () {
+        var key = 'theme-preference';
+        var stored = localStorage.getItem(key);
+        var dark = stored === 'dark' || (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
